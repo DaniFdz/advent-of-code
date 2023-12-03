@@ -19,7 +19,7 @@ fn read_file() -> io::Result<Vec<String>>{
 fn main() -> io::Result<()> {
     check_args()?;
     let content = read_file()?;
-    days::day2::problem1(content.clone());
-    days::day2::problem2(content);
+    days::day3::problem1(content.clone());
+    // days::day2::problem2(content);
     Ok(())
 }
