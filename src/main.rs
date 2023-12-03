@@ -20,6 +20,6 @@ fn main() -> io::Result<()> {
     check_args()?;
     let content = read_file()?;
     days::day3::problem1(content.clone());
-    // days::day2::problem2(content);
+    days::day3::problem2(content);
     Ok(())
 }
