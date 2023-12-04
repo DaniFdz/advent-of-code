@@ -1,28 +1,17 @@
-fn get_winning_numbers(mut winning_card: Vec<u16>, actual_card: Vec<u16>) -> u16{
+use std::collections::HashMap;
+
+fn get_winning_numbers(winning_card: Vec<u16>, actual_card: Vec<u16>) -> u16{
     let mut count = 0;
-    winning_card.sort();
-    for number in actual_card {
-        if binary_search(&winning_card, number) {
+    let mut wining_numbers: HashMap<u16, u16> = HashMap::new(); 
+    winning_card.into_iter().for_each(|x| {
+        wining_numbers.insert(x, 0);
+    });
+    actual_card.into_iter().for_each(|x| {
+        if wining_numbers.contains_key(&x) {
             count += 1;
         }
-    }
+    }); 
     count
-}
-
-fn binary_search(winning_card: &[u16], number: u16) -> bool {
-   let mut left = 0;
-   let mut right = winning_card.len();
-   while left < right {
-       let mid = (left + right) / 2;
-       if winning_card[mid] == number {
-           return true;
-       } else if winning_card[mid] < number {
-           left = mid + 1;
-       } else {
-           right = mid;
-       }
-   }
-   false
 }
 
 fn get_points(winning_numbers: u16) -> u32 {
