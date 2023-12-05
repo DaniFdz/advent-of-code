@@ -1,5 +1,3 @@
-use std::io::Write;
-
 #[derive(Debug)]
 struct Range{
     destination: u32,
