@@ -1,10 +1,4 @@
-use std::collections::HashMap;
-
-#[derive(PartialEq, Eq, Hash, Debug)]
-struct Categories{
-    source: String,
-    destination: String,
-}
+use std::io::Write;
 
 #[derive(Debug)]
 struct Range{
@@ -14,48 +8,47 @@ struct Range{
 }
 
 pub fn process(input: &str) -> u32 {
-    let mut maps: HashMap<Categories, Vec<Range>> = HashMap::new();
-
-    let seeds = input.lines()
-                    .collect::<Vec<&str>>()[0]
-                    .split(": ").collect::<Vec<&str>>()[1]
-                    .split(" ").map(|x| 
-                        x.parse::<u32>().expect("Should be a number")
-                    ).collect::<Vec<u32>>();
+    let mut maps: Vec<Vec<Range>> = Vec::new();
 
     input.split("\n\n")
         .collect::<Vec<&str>>()[1..]
         .iter()
         .for_each(|x| {
-            let map = x.split(" map:\n").collect::<Vec<&str>>();
-            let categories = map[0].split("-to-").collect::<Vec<&str>>();
-            let cat = Categories{
-                source: categories[0].to_string(),
-                destination: categories[1].to_string(),
-            };
-            let ranges = map[1].split("\n")
+            let mut map: Vec<Range> = Vec::new();
+            x.split(" map:\n").collect::<Vec<&str>>()[1].split("\n")
+            .filter(|y| !y.is_empty())
+            .for_each(|row| {
+                let range = row.split(" ")
                     .collect::<Vec<&str>>()
                     .iter()
-                    .filter(|x| !x.is_empty())
-                    .map(|x| {
-                        let range = x.split(" ")
-                            .collect::<Vec<&str>>()
-                            .iter()
-                            .map(|y| {
-                                y.parse::<u32>().expect("Should be a number:")
-                            }).collect::<Vec<u32>>();
-                        Range{
-                            destination: range[0],
-                            source: range[1],
-                            length: range[2],
-                        }
-                    }).collect::<Vec<Range>>();
-
-            maps.insert(cat, ranges);
-
+                    .map(|n| {
+                        n.parse::<u32>().expect("Should be a number:")
+                    }).collect::<Vec<u32>>();
+                map.push(Range{
+                    destination: range[0],
+                    source: range[1],
+                    length: range[2],
+                });
+            });
+            maps.push(map);
         });
-    dbg!(&maps);
-    1
+
+    let inputs = input.lines()
+        .next().unwrap()
+        .split(": ").collect::<Vec<&str>>()[1]
+        .split(" ")
+        .map(|x| x.parse::<u32>().expect("Should be a number:"));
+    inputs.map(|mut x|{
+        for map in &maps{
+            for possible_value in map{
+                if x >= possible_value.source && x <= possible_value.source + possible_value.length{
+                    x = possible_value.destination + (x - possible_value.source);
+                    break;
+                }
+            }
+        }
+        x
+    }).min().unwrap()
 }
 
 #[cfg(test)]
@@ -97,7 +90,7 @@ temperature-to-humidity map:
 humidity-to-location map:
 60 56 37
 56 93 4");
-        assert_eq!(result, 0);
+        assert_eq!(result, 35);
     }
 }
 
