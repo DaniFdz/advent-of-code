@@ -1,4 +1,4 @@
-use day_xx::part2::process;
+use {{crate_name}}::part2::process;
 
 fn main(){
     let input = include_str!("../../inputs/input2.txt");
