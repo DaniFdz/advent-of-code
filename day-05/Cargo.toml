@@ -11,6 +11,6 @@ edition = "2021"
 divan = { workspace = true }
 
 [[bench]]
-name = "day-05"
+name = "day-05-bench"
 path = "benches/benchmarks.rs"
 harness = false

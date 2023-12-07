@@ -14,7 +14,7 @@ fn part1(){
 
 #[divan::bench]
 fn part2(){
-    part1::process(divan::black_box(include_str!(
+    part2::process(divan::black_box(include_str!(
         "../inputs/input2.txt"
     )));
 }

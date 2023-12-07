@@ -1,3 +1,6 @@
+run day part:
+	cargo run -r -p {{day}} --bin {{part}}
+
 bench-all:
 	cargo bench -q | tee benchmaks.txt
 
