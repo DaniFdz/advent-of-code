@@ -157,50 +157,42 @@ pub fn process(input: &str) -> u32 {
     maze.get_startting_point();
     let pipes = maze.get_pipes();
 
-    maze.maze = maze.maze.iter().enumerate().map(|(y, row)| {
-        row.iter().enumerate().map(|(x, val)| {
-            if !pipes.contains(&(y, x)){
-                return MazeObject::Ground;
-            }
-            *val
-        }).collect()
-    }).collect();
-    
+    use MazeObject::*;
+
     maze.maze.iter().enumerate().map(|(y, row)| {
-        row.iter().enumerate().map(|(x, val)| {
-            if val != &MazeObject::Ground{
+        let mut up = 0;
+        let mut down = 0;
+        row.iter().enumerate().map(|(x, col)| {
+            if pipes.contains(&(y, x)) {
+                match col {
+                    VerticalPipe => {
+                        up += 1;
+                        down += 1;
+                    },
+                    NWCorner => {
+                        up += 1;
+                    },
+                    NECorner => {
+                        up += 1;
+                    },
+                    SWCorner => {
+                        down += 1;
+                    },
+                    SECorner => {
+                        down += 1;
+                    },
+                    _ => {}
+                }
                 return 0;
             }
-            let mut count = 0;
-            let mut x_copy = x+1;
-
-            while x_copy < maze.width{
-                if maze.maze[y][x_copy] == MazeObject::VerticalPipe{
-                    count += 1
+            else{
+                if [0,maze.width-1].contains(&x) || [0,maze.height-1].contains(&y) {
+                    return 0;
                 }
-                else if maze.maze[y][x_copy] == MazeObject::SECorner{
-                    while x_copy + 1 < maze.width && maze.maze[y][x_copy+1] == MazeObject::HorizontalPipe{
-                        x_copy += 1;
-                    }
-                    if x_copy + 1 < maze.width && maze.maze[y][x_copy+1] == MazeObject::NWCorner{
-                        count += 1;
-                    }
-                }
-                else if maze.maze[y][x_copy] == MazeObject::NECorner{
-                    while x_copy + 1 < maze.width && maze.maze[y][x_copy+1] == MazeObject::HorizontalPipe{
-                        x_copy += 1;
-                    }
-                    if x_copy + 1 < maze.width && maze.maze[y][x_copy+1] == MazeObject::SWCorner{
-                        count += 1;
-                    }
-                }
-
-                x_copy += 1;
+                return up.min(down) % 2;
             }
-            count % 2
         }).sum::<u32>()
     }).sum()
-
 }
 
 #[cfg(test)]
