@@ -7,11 +7,11 @@ struct Point {
     y: usize,
 }
 
-pub fn process(input: &str) -> u32 {
+pub fn process(input: &str) -> u64 {
     process_data(input, 1000000)
 }
 
-fn process_data(input: &str, scale: u32) -> u32 {
+fn process_data(input: &str, scale: u64) -> u64 {
     let mut points: Vec<Point> = Vec::new();
     input.lines().enumerate().for_each(|(y, line)| {
         if line.chars().any(|c| c == '#') {
@@ -36,7 +36,7 @@ fn process_data(input: &str, scale: u32) -> u32 {
         .filter(|i| input.lines().all(|line| line.chars().nth(*i).unwrap() == '.'))
         .collect::<HashSet<usize>>();
 
-    let mut total = 0;
+    let mut total: u64 = 0;
 
     points.iter().tuple_combinations().for_each(|(p1, p2)| {
         for x in (p1.x.min(p2.x))..(p1.x.max(p2.x)) {
@@ -62,6 +62,17 @@ mod tests{
 
     #[test]
     fn test_part2(){
+        let result = process_data("...#......
+.......#..
+#.........
+..........
+......#...
+.#........
+.........#
+..........
+.......#..
+#...#.....", 2);
+        assert_eq!(result, 374);
         let result = process_data("...#......
 .......#..
 #.........
