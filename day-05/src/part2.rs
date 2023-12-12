@@ -10,53 +10,72 @@ struct Range{
 #[derive(Debug)]
 struct Pair{
     start: u32,
-    end: u32,
-}
-
-fn get_new_pairs(pairs: &Vec<Vec<Pair>>, ranges: &Vec<Vec<Vec<Range>>>) -> Vec<Vec<Pair>>{
-    if ranges.len() == 0{
-        pairs.clone()
-    }
-
-
+    length: u32,
 }
 
 pub fn process(input: &str) -> u32 {
-    let pairs = input.lines()
-        .next()
-        .unwrap()
-        .split(": ")
-        .skip(1)
-        .map(|x| x.split_whitespace()
-            .collect::<Vec<&str>>()
-            .chunks(2)
-            .map(|x| Pair{
-                start: x[0].parse::<u32>().unwrap(),
-                end: x[1].parse::<u32>().unwrap(),
-            }).collect::<Vec<Pair>>()
-        ).collect::<Vec<Vec<Pair>>>();
-    dbg!(&pairs);
+    let mut maps: Vec<Vec<Range>> = Vec::new();
 
-    let ranges = input.split("\n\n")
-        .skip(1)
-        .map(|x| x.split(":")
-            .skip(1)
-            .map(|y| y.split("\n").skip(1)
-                .map(|z| {
-                    let range = z.split_whitespace()
-                        .collect::<Vec<&str>>();
-                    Range{
-                        destination: range[0].parse::<u32>().unwrap(),
-                        source: range[1].parse::<u32>().unwrap(),
-                        length: range[2].parse::<u32>().unwrap(),
+    input.split("\n\n")
+        .collect::<Vec<&str>>()[1..]
+        .iter()
+        .for_each(|x| {
+            let mut map: Vec<Range> = Vec::new();
+            x.split(" map:\n").collect::<Vec<&str>>()[1].split("\n")
+            .filter(|y| !y.is_empty())
+            .for_each(|row| {
+                let range = row.split(" ")
+                    .collect::<Vec<&str>>()
+                    .iter()
+                    .map(|n| {
+                        n.parse::<u32>().expect("Should be a number:")
+                    }).collect::<Vec<u32>>();
+                map.push(Range{
+                    destination: range[0],
+                    source: range[1],
+                    length: range[2],
+                });
+            });
+            maps.push(map);
+        });
+
+
+    let pairs: Vec<Pair> = input.lines()
+        .next().unwrap()
+        .split(": ").nth(1).unwrap()
+        .split_whitespace().collect::<Vec<&str>>().chunks(2).into_iter()
+        .map(|chunk| {
+            if chunk.len() == 2 {
+                Some(Pair {
+                    start: chunk[0].parse::<u32>().unwrap(),
+                    length: chunk[1].parse::<u32>().unwrap(),
+                })
+            } else {
+                None
+            }
+        }).filter(|x| x.is_some())
+        .map(|x| x.unwrap())
+        .collect::<Vec<Pair>>();
+
+    let mut min = u32::MAX;
+    for pair in pairs{
+        for n in pair.start..pair.start+pair.length{
+            let mut x = n;
+            for map in &maps{
+                for possible_value in map{
+                    if x >= possible_value.source && x <= possible_value.source + possible_value.length{
+                        x = possible_value.destination + (x - possible_value.source);
+                        break;
                     }
-                }).collect::<Vec<Range>>()
-            ).collect::<Vec<Vec<Range>>>()
-        ).collect::<Vec<Vec<Vec<Range>>>>();
-    dbg!(&ranges);
-
-    1
+                }
+            }
             
+            if x < min{
+                min = x;
+            }
+        }
+    }
+    min
 }
 
 #[cfg(test)]
@@ -101,4 +120,3 @@ humidity-to-location map:
         assert_eq!(result, 46);
     }
 }
-
