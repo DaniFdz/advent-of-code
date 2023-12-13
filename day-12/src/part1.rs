@@ -1,252 +1,88 @@
-#[derive(Debug, Eq, PartialEq, Clone)]
-enum SpringState{
-    Operational,
-    Damaged,
-    Unknown,
+use std::collections::HashMap;
+
+#[derive(Debug, Eq, PartialEq, Hash, Clone)]
+struct State {
+    state: String,
+    expected: Vec<usize>,
 }
 
-impl std::fmt::Display for SpringState {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        use SpringState::*;
-        match self {
-            Operational => write!(f, "."),
-            Damaged => write!(f, "#"),
-            Unknown => write!(f, "?"),
+fn process_state(state: State, cache: &mut HashMap<State, u32>) -> u32 {
+    /* Check if we've already calculated this state */
+
+    if let Some(&value) = cache.get(&state) {
+        return value;
+    }
+
+    /* Base cases */
+
+    if state.state.len() == 0 {
+        match state.expected.len() {
+            0 => return 1,
+            _ => return 0,
         }
     }
-}
 
-#[derive(Debug, Clone)]
-struct Row{
-    state:Vec<SpringState>,
-    expected:Vec<u8>
-}
-
-fn check_validity(row: Row) -> bool {
-    use SpringState::*;
-    let mut index = 0;
-    let mut consecutive = 0;
-    for i in 0..row.state.len(){
-        match row.state[i]{
-            Operational => {
-                if consecutive != 0{
-                    if index >= row.expected.len(){
-                        return false;
-                    }
-                    if consecutive != row.expected[index]{
-                        return false;
-                    }
-                    consecutive = 0;
-                    index += 1;
-                }
-                if i == row.state.len() - 1{
-                    if index != row.expected.len(){
-                        return false;
-                    }
-                }
-            },
-            Damaged => {
-                consecutive += 1;
-                if i == row.state.len() - 1{
-                    if index + 1 != row.expected.len(){
-                        return false;
-                    }
-                    if consecutive != row.expected[index]{
-                        return false;
-                    }
-                }
-            },
-            Unknown => {
-                if index < row.expected.len(){
-                    return consecutive <= row.expected[index];
-                }
-                else {
-                    return index == row.expected.len() && consecutive == 0;
-                }
-            }
+    if state.expected.len() == 0 {
+        match state.state.chars().any(|c| c == '#'){
+            true => return 0,
+            false => return 1,
         }
     }
-    return true;
-}
 
-fn get_posibilities(row: Row) -> u32 {
-    use SpringState::*;
-    match check_validity(row.clone()) {
-        true =>  {
-            if let Some(index) = row.state.iter().position(|s| *s == Unknown){
-                let mut row1 = row.clone();
-                *row1.state.get_mut(index).unwrap() = Operational;
-                let mut row2 = row.clone();
-                *row2.state.get_mut(index).unwrap() = Damaged;
-                return get_posibilities(row1) + get_posibilities(row2);
-            }
-            return 1;
-        },
-        false => { return 0; }
-    };
+    /* Recursive cases */
 
+    let mut result = 0;
+
+    if ".?".contains(state.state.chars().nth(0).unwrap()) {
+        let new_state = State{
+            state: state.state.chars().skip(1).collect(),
+            expected: state.expected.clone(),
+        };
+        result += process_state(new_state, cache);
+    }
+
+    if "#?".contains(state.state.chars().nth(0).unwrap()) {
+        if state.expected[0] <= state.state.len() &&
+            state.state.chars().take(state.expected[0]).all(|c| c != '.') &&
+            ( state.state.len() == state.expected[0] || state.state.chars().nth(state.expected[0]).unwrap() != '#' ){
+            let new_state = State{
+                state: state.state.chars().skip(state.expected[0]+1).collect(),
+                expected: state.expected[1..].to_vec(),
+            };
+
+            result += process_state(new_state, cache);
+        }
+        else{
+            result += 0;
+        }
+    }
+
+    /* Cache the result */
+    cache.insert(state.clone(), result);
+
+    result
 }
 
 pub fn process(input: &str) -> u32 {
     input.lines()
         .map(|line| {
-            let splited_line = line.split_whitespace().collect::<Vec<&str>>();
-            let state = splited_line
-                .iter()
-                .next()
-                .unwrap()
-                .chars()
-                .map(|c| {
-                    match c{
-                        '.' => SpringState::Operational,
-                        '#' => SpringState::Damaged,
-                        '?' => SpringState::Unknown,
-                        _ => panic!("Unknown char")
-                    }
-                }).collect::<Vec<SpringState>>();
- 
-            let expected = splited_line
-                .iter()
-                .nth(1)
-                .map(|s| s.split(",")
-                     .map(|s| s.parse::<u8>().expect("Not a number"))
-                )
-                .unwrap()
-                .collect::<Vec<u8>>();
-            get_posibilities(Row{state, expected})
+            let (state, _expected) = line.split_at(line.find(" ").unwrap());
+
+            let expected = _expected
+                .trim()
+                .split(",")
+                .map(|x| x.parse::<usize>().expect("Expected a number"))
+                .collect::<Vec<usize>>();
+
+            let mut cache: HashMap<State, u32> = HashMap::new();
+            process_state(State{state: state.to_string(), expected}, &mut cache)
+
         }).sum()
 }
 
 #[cfg(test)]
 mod tests{
     use super::*;
-
-    #[test]
-    fn test_check_validity(){
-        use SpringState::*;
-
-        assert_eq!(check_validity(Row{
-            state: vec![Damaged, Operational, Damaged],
-            expected: vec![1,1]
-        }), true);
-
-        assert_eq!(check_validity(Row{
-            state: vec![Operational, Damaged, Operational, Damaged, Operational],
-            expected: vec![1,1]
-        }), true);
-
-        assert_eq!(check_validity(Row{
-            state: vec![Operational, Damaged, Operational, Operational, Operational, Operational, Operational, Operational, Damaged, Damaged],
-            expected: vec![1,2]
-        }), true);
-
-        assert_eq!(check_validity(Row{
-            state: vec![Operational, Damaged, Operational, Damaged, Damaged],
-            expected: vec![1,2]
-        }), true);
-
-        assert_eq!(check_validity(Row{
-            state: vec![Operational, Damaged, Damaged],
-            expected: vec![1]
-        }), false);
-
-        assert_eq!(check_validity(Row{
-            state: vec![Operational, Damaged, Damaged, Operational],
-            expected: vec![1]
-        }), false);
-
-        assert_eq!(check_validity(Row{
-            state: vec![Damaged, Damaged, Operational, Damaged],
-            expected: vec![1, 1]
-        }), false);
-
-        assert_eq!(check_validity(Row{
-            state: vec![Damaged, Operational, Operational],
-            expected: vec![1, 1]
-        }), false);
-
-        assert_eq!(check_validity(Row{
-            state: vec![Damaged, Operational, Damaged],
-            expected: vec![1, 1]
-        }), true);
-
-        assert_eq!(check_validity(Row{
-            state: vec![Damaged, Unknown, Damaged],
-            expected: vec![1, 1]
-        }), true);
-
-        assert_eq!(check_validity(Row{
-            state: vec![Damaged, Damaged, Unknown],
-            expected: vec![1, 1]
-        }), false);
-
-        assert_eq!(check_validity(Row{
-            state: vec![Unknown, Damaged, Unknown],
-            expected: vec![1, 5]
-        }), true);
-    }
-
-    #[test]
-    fn test_get_posibilities(){
-        use SpringState::*;
-
-        assert_eq!(get_posibilities(Row{
-            state: vec![Unknown, Damaged, Operational, Damaged],
-            expected: vec![1, 1]
-        }), 1);
-
-        assert_eq!(get_posibilities(Row{
-            state: vec![Damaged, Unknown, Unknown],
-            expected: vec![1, 2]
-        }), 0);
-
-        assert_eq!(get_posibilities(Row{
-            state: vec![Unknown, Unknown, Unknown, Operational, Damaged, Damaged, Damaged],
-            expected: vec![1, 1, 3]
-        }), 1);
-
-        assert_eq!(get_posibilities(Row{
-            state: vec![
-                Operational, Unknown, Unknown, Operational, Operational, Unknown, Unknown,
-                Operational, Operational, Operational, Unknown, Damaged, Damaged, Operational
-            ],
-            expected: vec![1, 1, 3]
-        }), 4);
-
-        assert_eq!(get_posibilities(Row{
-            state: vec![
-                Unknown, Damaged, Unknown, Damaged, Unknown, Damaged, Unknown, Damaged,
-                Unknown, Damaged, Unknown, Damaged, Unknown, Damaged, Unknown,
-            ],
-            expected: vec![1, 3, 1, 6]
-        }), 1);
-
-        assert_eq!(get_posibilities(Row{
-            state: vec![
-                Unknown, Unknown, Unknown, Unknown, Operational, Damaged, Operational,
-                Operational, Operational, Damaged, Operational, Operational, Operational
-            ],
-            expected: vec![4,1,1]
-        }), 1);
-
-        assert_eq!(get_posibilities(Row{
-            state: vec![
-                Unknown, Unknown, Unknown, Unknown, Operational, Damaged, Damaged,
-                Damaged, Damaged, Damaged, Damaged, Operational, Operational, Damaged,
-                Damaged, Damaged, Damaged, Damaged, Operational,
-            ],
-            expected: vec![1,6,5]
-        }), 4);
-
-        assert_eq!(get_posibilities(Row{
-            state: vec![
-                Unknown, Damaged, Damaged, Damaged, Unknown, Unknown, Unknown, Unknown,
-                Unknown, Unknown, Unknown, Unknown,
-            ],
-            expected: vec![3,2,1]
-        }), 10);
-    }
-
     #[test]
     fn test_part1(){
         let result = process("???.### 1,1,3
