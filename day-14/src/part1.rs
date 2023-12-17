@@ -12,10 +12,7 @@ fn transpose(input: &str) -> Vec<Vec<char>> {
     result
 }
 
-fn treat_line(input: &Vec<char>, cache: &mut HashMap<Vec<char>, u64>) -> u64{
-    if let Some(x) = cache.get(input) {
-        return *x;
-    }
+fn treat_line(input: &Vec<char>) -> u64{
     if input.len() == 0 {
         return 0;
     }
@@ -31,18 +28,16 @@ fn treat_line(input: &Vec<char>, cache: &mut HashMap<Vec<char>, u64>) -> u64{
     let mut result = 0;
     if i < input.len()-1 {
         let slice = &input[i+1..].to_vec();
-        result += treat_line(slice, cache);
+        result += treat_line(slice);
     }
     count = input.len() as u64 - count;
     result += (input.len()*(input.len()+1)/2) as u64 - (count*(count+1)/2) as u64;
-    cache.insert(input.to_vec(), result);
     result
 }
 
 pub fn process(input: &str) -> u64 {
     let data = transpose(input);
-    let mut cache: HashMap<Vec<char>, u64> = HashMap::new();
-    data.iter().map(|x| treat_line(x, &mut cache)).sum()
+    data.iter().map(|x| treat_line(x)).sum()
 }
 
 #[cfg(test)]
