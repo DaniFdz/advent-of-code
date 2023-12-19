@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 fn transpose(input: &str) -> Vec<Vec<char>> {
     let mut result: Vec<Vec<char>> = Vec::new();
     for x in 0..input.lines().nth(0).unwrap().len() {
