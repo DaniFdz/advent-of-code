@@ -39,3 +39,18 @@ prompt: check-aoc-cookie ## get prompt, requires $AOC_SESSION_COOKIE, optional: 
 	else \
 		go run scripts/cmd/prompt/main.go -cookie $(AOC_SESSION_COOKIE); \
 	fi
+
+setup: check-aoc-cookie ## make skeleton, and get input and prompt
+	@ if [[ -n $$DAY && -n $$YEAR ]]; then \
+		go run scripts/cmd/skeleton/main.go -day $(DAY) -year $(YEAR) ; \
+		go run scripts/cmd/input/main.go -day $(DAY) -year $(YEAR) -cookie $(AOC_SESSION_COOKIE); \
+		go run scripts/cmd/prompt/main.go -day $(DAY) -year $(YEAR) -cookie $(AOC_SESSION_COOKIE); \
+	elif [[ -n $$DAY ]]; then \
+		go run scripts/cmd/skeleton/main.go -day $(DAY) ; \
+		go run scripts/cmd/input/main.go -day $(DAY) -cookie $(AOC_SESSION_COOKIE); \
+		go run scripts/cmd/prompt/main.go -day $(DAY) -cookie $(AOC_SESSION_COOKIE); \
+	else \
+		go run scripts/cmd/skeleton/main.go; \
+		go run scripts/cmd/input/main.go -cookie $(AOC_SESSION_COOKIE); \
+		go run scripts/cmd/prompt/main.go -cookie $(AOC_SESSION_COOKIE); \
+	fi
