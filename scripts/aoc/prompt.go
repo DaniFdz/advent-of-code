@@ -22,7 +22,7 @@ func GetPrompt(day, year int, cookie string) {
 	prompt := parseHTML(body)
 
 	// write to file
-	filename := filepath.Join(util.Dirname(), "../../", fmt.Sprintf("%d/day%02d/prompt.md", year, day))
+	filename := filepath.Join(util.Dirname(), "../../", fmt.Sprintf("%d/day%02d/prompt.txt", year, day))
 	WriteToFile(filename, []byte(prompt))
 
 	fmt.Println("Wrote prompt to file: ", filename)
