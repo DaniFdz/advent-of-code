@@ -7,18 +7,23 @@ import (
   "runtime"
 )
 
-// CopyToClipboard is for macOS and linux
 func CopyToClipboard(text string) error {
   var copyCommand string
   switch os := runtime.GOOS; os {
   case "linux":
-    copyCommand = "xclip -sel clip"
+    if IsWSL() {
+      copyCommand = "clip.exe"
+    } else {
+      copyCommand = "xclip -sel clip"
+    }
   case "darwin":
     copyCommand = "pbcopy"
+  case "windows":
+    copyCommand = "clip.exe"
   default:
     return fmt.Errorf("os %s not supported for copying", os)
   }
-	command := exec.Command("pbcopy")
+	command := exec.Command(copyCommand)
 	command.Stdin = bytes.NewReader([]byte(text))
 
 	if err := command.Start(); err != nil {
@@ -31,4 +36,19 @@ func CopyToClipboard(text string) error {
 	}
 
 	return nil
+}
+
+func IsWSL() bool {
+	cmd := exec.Command("systemd-detect-virt")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
+
+	if err != nil {
+		fmt.Println("Error running systemd-detect-virt:", err)
+		return false
+	}
+
+	output := out.String()
+	return output == "wsl\n" 
 }
