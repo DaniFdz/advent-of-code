@@ -39,24 +39,31 @@ func main() {
 	}
 }
 
+func validate(report []int) bool {
+  dec := false
+  for idx := range report {
+    if idx == 0 {
+      dec = report[idx] > report[idx+1]
+    } else {
+      diff := math.Abs(report[idx-1] - report[idx])
+      decStep := report[idx-1] > report[idx]
+      if (decStep && !dec) || (!decStep && dec) || diff < 1 || diff > 3 {
+        return false
+      }
+    }
+  }
+
+  return true
+}
+
 func part1(input string) int {
 	parsed := parseInput(input)
 	ans := len(parsed)
 
 	for _, report := range parsed {
-		dec := false
-		for idx := range report {
-			if idx == 0 {
-				dec = report[idx] > report[idx+1]
-			} else {
-				diff := math.Abs(report[idx-1] - report[idx])
-				decStep := report[idx-1] > report[idx]
-				if (decStep && !dec) || (!decStep && dec) || diff < 1 || diff > 3 {
-					ans -= 1
-					break
-				}
-			}
-		}
+    if validate(report) {
+      ans -= 1
+    }
 	}
 
 	return ans
@@ -67,24 +74,34 @@ func part2(input string) int {
 	ans := len(parsed)
 
 	for _, report := range parsed {
-		dec := false
-		someFailed := false
-		for idx := range report {
-			if idx == 0 {
-				dec = report[idx] > report[idx+1]
-			} else {
-				diff := math.Abs(report[idx-1] - report[idx])
-				decStep := report[idx-1] > report[idx]
-				if (decStep && !dec) || (!decStep && dec) || diff < 1 || diff > 3 {
-					if someFailed {
-						ans -= 1
-						break
-					} else {
-						someFailed = true
-					}
-				}
-			}
-		}
+    valid := false
+    if validate(report) {
+      valid = true
+      util.PrintIntSlice(report)
+      fmt.Println("- Valid")
+      continue
+    }
+
+    for idx := range report {
+      newReport := make([]int, 0)
+      for j, n := range report {
+        if j != idx {
+          newReport = append(newReport, n)
+        }
+      }
+      if validate(newReport) {
+        valid = true
+        util.PrintIntSlice(newReport)
+        fmt.Println("- Valid")
+        break
+      }
+    }
+
+    if !valid {
+      ans -= 1
+      util.PrintIntSlice(report)
+      fmt.Println("- Ivnalid")
+    }
 	}
 
 	return ans
